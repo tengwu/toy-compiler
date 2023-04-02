@@ -24,34 +24,36 @@ class NBlock;
 static LLVMContext MyContext;
 
 class CodeGenBlock {
-public:
-    BasicBlock *block;
-    Value *returnValue;
-    std::map<std::string, Value *> locals;
+  public:
+  BasicBlock *block;
+  Value *returnValue;
+  std::map<std::string, Value *> locals;
 };
 
 class CodeGenContext {
-    std::stack<CodeGenBlock *> blocks;
-    Function *mainFunction;
+  std::stack<CodeGenBlock *> blocks;
+  Function *mainFunction;
 
-public:
-    Module *module;
-    CodeGenContext() { module = new Module("main", MyContext); }
+  public:
+  Module *module;
+  CodeGenContext() { module = new Module("main", MyContext); }
 
-    void generateCode(NBlock &root, std::string bcFile);
-    GenericValue runCode();
-    std::map<std::string, Value *> &locals() { return blocks.top()->locals; }
-    BasicBlock *currentBlock() { return blocks.top()->block; }
-    void pushBlock(BasicBlock *block) {
-        blocks.push(new CodeGenBlock());
-        blocks.top()->returnValue = NULL;
-        blocks.top()->block = block;
-    }
-    void popBlock() {
-        CodeGenBlock *top = blocks.top();
-        blocks.pop();
-        delete top;
-    }
-    void setCurrentReturnValue(Value *value) { blocks.top()->returnValue = value; }
-    Value *getCurrentReturnValue() { return blocks.top()->returnValue; }
+  void generateCode(NBlock &root, std::string bcFile);
+  GenericValue runCode();
+  std::map<std::string, Value *> &locals() { return blocks.top()->locals; }
+  BasicBlock *currentBlock() { return blocks.top()->block; }
+  void pushBlock(BasicBlock *block) {
+    blocks.push(new CodeGenBlock());
+    blocks.top()->returnValue = NULL;
+    blocks.top()->block = block;
+  }
+  void popBlock() {
+    CodeGenBlock *top = blocks.top();
+    blocks.pop();
+    delete top;
+  }
+  void setCurrentReturnValue(Value *value) {
+    blocks.top()->returnValue = value;
+  }
+  Value *getCurrentReturnValue() { return blocks.top()->returnValue; }
 };
