@@ -12,7 +12,11 @@ void createCoreFunctions(CodeGenContext &context);
 
 int main(int argc, char **argv)
 {
-    FILE *fp = fopen("test/example.txt", "r");
+    const char *fname = "test/example.txt";
+    if (argc == 2)
+        fname = argv[1];
+
+    FILE *fp = fopen(fname, "r");
     if (!fp)
     {
         printf("couldn't open file for reading\n");
