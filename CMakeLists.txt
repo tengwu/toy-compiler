@@ -17,10 +17,6 @@ add_flex_bison_dependency(Scanner Parser)
 # Use customized LLVM
 find_package(Clang REQUIRED CONFIG HINTS ${LLVM_DIR} NO_DEFAULT_PATH)
 
-# Use default LLVM
-# find_package(Clang REQUIRED CONFIG)
-# find_package(LLVM REQUIRED CONFIG)
-
 include_directories(${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS} SYSTEM)
 link_directories(${LLVM_LIBRARY_DIRS})
 
