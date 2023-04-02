@@ -13,8 +13,11 @@ void createCoreFunctions(CodeGenContext &context);
 int main(int argc, char **argv)
 {
     const char *fname = "test/example.txt";
-    if (argc == 2)
+    const char *foutname = "test/example.bc";
+    if (argc == 3) {
         fname = argv[1];
+        foutname = argv[2];
+    }
 
     FILE *fp = fopen(fname, "r");
     if (!fp)
@@ -34,6 +37,6 @@ int main(int argc, char **argv)
     InitializeNativeTargetAsmParser();
     CodeGenContext context;
     createCoreFunctions(context);
-    context.generateCode(*programBlock, "test/example.bc");
+    context.generateCode(*programBlock, foutname);
     return 0;
 }
