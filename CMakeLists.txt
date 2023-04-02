@@ -14,8 +14,13 @@ flex_target(Scanner tokens.l ${CMAKE_SOURCE_DIR}/tokens.cpp)
 bison_target(Parser parser.y ${CMAKE_SOURCE_DIR}/parser.cpp)
 add_flex_bison_dependency(Scanner Parser)
 
-find_package(Clang REQUIRED CONFIG HINTS ${LLVM_DIR} ${LLVM_DIR}/lib/cmake/clang NO_DEFAULT_PATH)
-find_package(LLVM REQUIRED CONFIG)
+# Use customized LLVM
+find_package(Clang REQUIRED CONFIG HINTS ${LLVM_DIR} NO_DEFAULT_PATH)
+find_package(LLVM REQUIRED CONFIG HINTS ${LLVM_DIR} NO_DEFAULT_PATH)
+
+# Use default LLVM
+# find_package(Clang REQUIRED CONFIG)
+# find_package(LLVM REQUIRED CONFIG)
 
 include_directories(${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS} SYSTEM)
 link_directories(${LLVM_LIBRARY_DIRS})
