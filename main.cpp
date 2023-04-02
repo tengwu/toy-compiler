@@ -1,6 +1,6 @@
-#include <iostream>
 #include "codegen.h"
 #include "node.h"
+#include <iostream>
 
 using namespace std;
 
@@ -10,8 +10,7 @@ extern NBlock *programBlock;
 
 void createCoreFunctions(CodeGenContext &context);
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     const char *fname = "test/example.txt";
     const char *foutname = "test/example.bc";
     if (argc == 3) {
@@ -20,8 +19,7 @@ int main(int argc, char **argv)
     }
 
     FILE *fp = fopen(fname, "r");
-    if (!fp)
-    {
+    if (!fp) {
         printf("couldn't open file for reading\n");
         exit(-1);
     }
