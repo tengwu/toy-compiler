@@ -63,7 +63,7 @@ void createEchoFunction(CodeGenContext &context, llvm::Function *printfFn) {
   toPrint->setName("toPrint");
   args.push_back(toPrint);
 
-  CallInst *call = CallInst::Create(printfFn, makeArrayRef(args), "", bblock);
+  CallInst *call = CallInst::Create(printfFn, args, "", bblock);
   ReturnInst::Create(MyContext, bblock);
   context.popBlock();
 }

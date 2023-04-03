@@ -1,6 +1,8 @@
 #include "codegen.h"
 #include "node.h"
 #include "parser.hpp"
+#include "llvm/IRPrinter/IRPrintingPasses.h"
+#include "llvm/Pass.h"
 
 using namespace std;
 
@@ -10,8 +12,8 @@ void CodeGenContext::generateCode(NBlock &root, std::string bcFile) {
 
   /* Create the top level interpreter function to call as entry */
   vector<Type *> argTypes;
-  FunctionType *ftype = FunctionType::get(Type::getInt32Ty(MyContext),
-                                          makeArrayRef(argTypes), false);
+  FunctionType *ftype =
+      FunctionType::get(Type::getInt32Ty(MyContext), argTypes, false);
   mainFunction =
       Function::Create(ftype, GlobalValue::ExternalLinkage, "main", module);
   BasicBlock *bblock = BasicBlock::Create(MyContext, "entry", mainFunction, 0);
@@ -25,16 +27,8 @@ void CodeGenContext::generateCode(NBlock &root, std::string bcFile) {
 
   std::cout << "Code is generated.\n";
   /* Print the bytecode in a human-readable format to see if our program compiled properly */
-  legacy::PassManager pm;
-  pm.add(createPrintModulePass(outs()));
-  pm.run(*module);
-
-  std::error_code errInfo;
-  llvm::raw_ostream *out =
-      new llvm::raw_fd_ostream(bcFile, errInfo, sys::fs::F_None);
-  llvm::WriteBitcodeToFile(*module, *out);
-  out->flush();
-  delete out;
+  auto pass = createPrintModulePass(outs());
+  pass->runOnModule(*module);
 }
 
 /* Executes the AST by running the main function */
@@ -76,7 +70,8 @@ Value *NIdentifier::codeGen(CodeGenContext &context) {
     std::cerr << "undeclared variable " << name << endl;
     return NULL;
   }
-  return new LoadInst(context.locals()[name], "", false,
+  return new LoadInst(llvm::Type::getInt64Ty(context.module->getContext()),
+                      context.locals()[name], "", false,
                       context.currentBlock());
 }
 
@@ -88,8 +83,7 @@ Value *NMethodCall::codeGen(CodeGenContext &context) {
   for (it = arguments.begin(); it != arguments.end(); it++) {
     args.push_back((**it).codeGen(context));
   }
-  CallInst *call = CallInst::Create(function, makeArrayRef(args), "",
-                                    context.currentBlock());
+  CallInst *call = CallInst::Create(function, args, "", context.currentBlock());
   std::cout << "Creating method call: " << id.name << endl;
   return call;
 }
@@ -173,8 +167,7 @@ Value *NExternDeclaration::codeGen(CodeGenContext &context) {
   for (it = arguments.begin(); it != arguments.end(); it++) {
     argTypes.push_back(typeOf((**it).type));
   }
-  FunctionType *ftype =
-      FunctionType::get(typeOf(type), makeArrayRef(argTypes), false);
+  FunctionType *ftype = FunctionType::get(typeOf(type), argTypes, false);
   Function *function = Function::Create(ftype, GlobalValue::ExternalLinkage,
                                         id.name.c_str(), context.module);
   return function;
@@ -186,8 +179,7 @@ Value *NFunctionDeclaration::codeGen(CodeGenContext &context) {
   for (it = arguments.begin(); it != arguments.end(); it++) {
     argTypes.push_back(typeOf((**it).type));
   }
-  FunctionType *ftype =
-      FunctionType::get(typeOf(type), makeArrayRef(argTypes), false);
+  FunctionType *ftype = FunctionType::get(typeOf(type), argTypes, false);
   Function *function = Function::Create(ftype, GlobalValue::InternalLinkage,
                                         id.name.c_str(), context.module);
   BasicBlock *bblock = BasicBlock::Create(MyContext, "entry", function, 0);
