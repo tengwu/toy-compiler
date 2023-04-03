@@ -7,6 +7,9 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetOptions.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
 
 using namespace std;
 using namespace llvm;
@@ -52,6 +55,26 @@ int main(int argc, char **argv) {
   auto TargetTriple = sys::getDefaultTargetTriple();
   auto TheModule = context.module;
 
+  // Create a new pass manager attached to it.
+  std::shared_ptr<legacy::FunctionPassManager> FPM =
+      std::make_unique<legacy::FunctionPassManager>(TheModule);
+
+  // Do simple "peephole" optimizations and bit-twiddling optzns.
+  FPM->add(createInstructionCombiningPass());
+  // Reassociate expressions.
+  FPM->add(createReassociatePass());
+  // Eliminate Common SubExpressions.
+  FPM->add(createGVNPass());
+  // Simplify the control flow graph (deleting unreachable blocks, etc).
+  FPM->add(createCFGSimplificationPass());
+
+  FPM->doInitialization();
+
+  // Optimize with function passes
+  for (auto &Func: *TheModule) FPM->run(Func);
+
+  printIR(TheModule);
+
   TheModule->setTargetTriple(TargetTriple);
 
   std::string Error;
@@ -77,8 +100,7 @@ int main(int argc, char **argv) {
   TheModule->setDataLayout(TheTargetMachine->createDataLayout());
 
   auto Filename = "test/output.o";
-  if (argc == 3)
-    Filename = argv[2];
+  if (argc == 3) Filename = argv[2];
   std::error_code EC;
   raw_fd_ostream dest(Filename, EC, sys::fs::OF_None);
 

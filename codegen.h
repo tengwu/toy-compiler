@@ -12,6 +12,7 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
+#include <llvm/Pass.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 #include <stack>
@@ -22,6 +23,12 @@ using namespace llvm;
 class NBlock;
 
 static LLVMContext MyContext;
+
+inline void printIR(Module *module) {
+  /* Print the bytecode in a human-readable format to see if our program compiled properly */
+  auto pass = createPrintModulePass(outs());
+  pass->runOnModule(*module);
+}
 
 class CodeGenBlock {
   public:

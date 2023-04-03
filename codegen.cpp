@@ -2,7 +2,6 @@
 #include "node.h"
 #include "parser.hpp"
 #include "llvm/IRPrinter/IRPrintingPasses.h"
-#include "llvm/Pass.h"
 
 using namespace std;
 
@@ -26,9 +25,7 @@ void CodeGenContext::generateCode(NBlock &root, std::string bcFile) {
   popBlock();
 
   std::cout << "Code is generated.\n";
-  /* Print the bytecode in a human-readable format to see if our program compiled properly */
-  auto pass = createPrintModulePass(outs());
-  pass->runOnModule(*module);
+  printIR(module);
 }
 
 /* Executes the AST by running the main function */
@@ -176,9 +173,9 @@ Value *NExternDeclaration::codeGen(CodeGenContext &context) {
 Value *NFunctionDeclaration::codeGen(CodeGenContext &context) {
   vector<Type *> argTypes;
   VariableList::const_iterator it;
-  for (it = arguments.begin(); it != arguments.end(); it++) {
+  for (it = arguments.begin(); it != arguments.end(); it++)
     argTypes.push_back(typeOf((**it).type));
-  }
+
   FunctionType *ftype = FunctionType::get(typeOf(type), argTypes, false);
   Function *function = Function::Create(ftype, GlobalValue::InternalLinkage,
                                         id.name.c_str(), context.module);
@@ -203,5 +200,6 @@ Value *NFunctionDeclaration::codeGen(CodeGenContext &context) {
 
   context.popBlock();
   std::cout << "Creating function: " << id.name << endl;
+
   return function;
 }
