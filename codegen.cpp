@@ -16,13 +16,13 @@ void CodeGenContext::generateCode(NBlock &root, std::string bcFile) {
   mainFunction =
       Function::Create(ftype, GlobalValue::ExternalLinkage, "main", module);
   BasicBlock *bblock = BasicBlock::Create(MyContext, "entry", mainFunction, 0);
+  Builder->SetInsertPoint(bblock);
 
   /* Push a new variable/block context */
   pushBlock(bblock);
   root.codeGen(*this); /* emit bytecode for the toplevel block */
-  ReturnInst::Create(MyContext,
-                     ConstantInt::get(Type::getInt32Ty(MyContext), 0), bblock);
-  //  Builder->CreateRet(ConstantInt::get(Type::getInt32Ty(MyContext), 0));
+
+  Builder->CreateRet(ConstantInt::get(Type::getInt32Ty(MyContext), 0));
   popBlock();
 
   std::cout << "Code is generated.\n";
