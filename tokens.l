@@ -14,6 +14,10 @@
 [ \t\n]                                         ;
 "extern"                                        KEYWORD_TOKEN(TEXTERN); return TEXTERN;
 "return"                                        KEYWORD_TOKEN(TRETURN); return TRETURN;
+"if"                                            KEYWORD_TOKEN(TIF); return TIF;
+"then"                                          KEYWORD_TOKEN(TTHEN); return TTHEN;
+"else"                                          KEYWORD_TOKEN(TELSE); return TELSE;
+"fi"                                            KEYWORD_TOKEN(TFI); return TFI;
 
 [a-zA-Z_][a-zA-Z0-9_]*                          STRING_TOKEN; return TIDENTIFIER;
 [0-9]+\.[0-9]*                                  STRING_TOKEN; return TDOUBLE;

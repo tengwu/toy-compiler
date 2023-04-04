@@ -30,7 +30,7 @@
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT
 %token <token> TPLUS TMINUS TMUL TDIV
-%token <token> TRETURN TEXTERN
+%token <token> TRETURN TEXTERN TIF TTHEN TELSE TFI
 
 /* Define the type of node our nonterminal symbols represent.
    The types refer to the %union declaration above. Ex: when
@@ -38,10 +38,10 @@
    calling an (NIdentifier*). It makes the compiler happy.
  */
 %type <ident> ident
-%type <expr> numeric call_expr value_expr assign_expr operand_expr
+%type <expr> numeric call_expr value_expr assign_expr operand_expr expr
 %type <varvec> func_decl_args
 %type <exprvec> call_args
-%type <block> program stmts block
+%type <block> program stmts block else_blocks
 %type <stmt> stmt var_decl func_decl extern_decl
 %type <token> comparison calculation
 
@@ -75,7 +75,12 @@ stmt : func_decl
          | assign_expr { $$ = new NExpressionStatement(*$1); }
          | TRETURN call_expr { $$ = new NReturnStatement(*$2); }
          | TRETURN value_expr { $$ = new NReturnStatement(*$2); }
+         | TIF expr TTHEN block else_blocks TFI { $$ = new NBranchStatement(*$2, *$4, *$5); }
          ;
+
+expr : value_expr { $$ = $1; }
+
+else_blocks: TELSE block { $$ = $2; }
 
 block : TLBRACE stmts TRBRACE { $$ = $2; }
          | TLBRACE TRBRACE { $$ = new NBlock(); }

@@ -39,11 +39,15 @@ class CodeGenBlock {
 
 class CodeGenContext {
   std::stack<CodeGenBlock *> blocks;
+  std::unique_ptr<IRBuilder<>> Builder;
   Function *mainFunction;
 
   public:
   Module *module;
-  CodeGenContext() { module = new Module("main", MyContext); }
+  CodeGenContext() {
+    module = new Module("main", MyContext);
+    Builder = std::make_unique<IRBuilder<>>(MyContext);
+  }
 
   void generateCode(NBlock &root, std::string bcFile);
   GenericValue runCode();

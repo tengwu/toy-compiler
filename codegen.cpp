@@ -22,6 +22,7 @@ void CodeGenContext::generateCode(NBlock &root, std::string bcFile) {
   root.codeGen(*this); /* emit bytecode for the toplevel block */
   ReturnInst::Create(MyContext,
                      ConstantInt::get(Type::getInt32Ty(MyContext), 0), bblock);
+  //  Builder->CreateRet(ConstantInt::get(Type::getInt32Ty(MyContext), 0));
   popBlock();
 
   std::cout << "Code is generated.\n";
@@ -202,4 +203,20 @@ Value *NFunctionDeclaration::codeGen(CodeGenContext &context) {
   std::cout << "Creating function: " << id.name << endl;
 
   return function;
+}
+
+NBranchStatement::NBranchStatement(NExpression &conditionExpr,
+                                   NBlock &thenBlock, NBlock &elseBlock)
+    : ConditionExpr(conditionExpr), ThenBlock(thenBlock), ElseBlock(elseBlock) {
+}
+Value *NBranchStatement::codeGen(CodeGenContext &context) {
+  //  auto &TheContext = context.module->getContext();
+  //  Value *CondV = ConditionExpr.codeGen(context);
+  //  if (!CondV) return nullptr;
+  //
+  //  CondV =
+  //      ICm ::Create(TheContext, CondV,
+  //                   ConstantInt::get(Type::getInt64Ty(TheContext), 0), "ifcond");
+
+  return nullptr;
 }

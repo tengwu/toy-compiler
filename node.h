@@ -77,6 +77,16 @@ class NBlock : public NExpression {
   virtual llvm::Value *codeGen(CodeGenContext &context);
 };
 
+class NBranchStatement : public NStatement {
+  public:
+      NExpression &ConditionExpr;
+      NBlock &ThenBlock;
+      NBlock &ElseBlock;
+      NBranchStatement(NExpression &conditionExpr, NBlock &thenBlock,
+                  NBlock &elseBlock);
+      llvm::Value *codeGen(CodeGenContext &context) override;
+};
+
 class NExpressionStatement : public NStatement {
   public:
   NExpression &expression;
