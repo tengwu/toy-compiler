@@ -1,7 +1,8 @@
 #include "codegen.h"
 #include "node.h"
 #include "parser.hpp"
-#include "llvm/IRPrinter/IRPrintingPasses.h"
+#include <llvm/IR/Instructions.h>
+#include <llvm/IRPrinter/IRPrintingPasses.h>
 
 using namespace std;
 
@@ -225,13 +226,41 @@ NBranchStatement::NBranchStatement(NExpression &conditionExpr,
     : ConditionExpr(conditionExpr), ThenBlock(thenBlock), ElseBlock(elseBlock) {
 }
 Value *NBranchStatement::codeGen(CodeGenContext &context) {
-  //  auto &TheContext = context.module->getContext();
-  //  Value *CondV = ConditionExpr.codeGen(context);
-  //  if (!CondV) return nullptr;
-  //
-  //  CondV =
-  //      ICm ::Create(TheContext, CondV,
-  //                   ConstantInt::get(Type::getInt64Ty(TheContext), 0), "ifcond");
+  auto &TheContext = context.module->getContext();
+  Value *CondV = ConditionExpr.codeGen(context);
+  if (!CondV) return nullptr;
+
+  CondV = context.Builder->CreateICmpNE(
+      CondV, ConstantInt::get(Type::getInt64Ty(MyContext), 0), "ifcond");
+
+  Function *TheFunction = context.Builder->GetInsertBlock()->getParent();
+
+  // Emit then block
+  BasicBlock *ThenBB = BasicBlock::Create(MyContext, "then", TheFunction);
+  BasicBlock *ElseBB = BasicBlock::Create(MyContext, "else");
+  BasicBlock *MergeBB = BasicBlock::Create(MyContext, "ifcont");
+
+  context.Builder->CreateCondBr(CondV, ThenBB, ElseBB);
+
+  context.Builder->SetInsertPoint(ThenBB);
+  Value *ThenV = ThenBlock.codeGen(context);
+  if (!ThenV) return nullptr;
+
+  // Goto MergeBB when finish ThenBB
+  context.Builder->CreateBr(MergeBB);
+
+  // Emit else block
+  TheFunction->insert(TheFunction->end(), ElseBB);
+  context.Builder->SetInsertPoint(ElseBB);
+
+  Value *ElseV = ElseBlock.codeGen(context);
+  if (!ElseV) return nullptr;
+
+  context.Builder->CreateBr(MergeBB);
+
+  // Emit merge block
+  TheFunction->insert(TheFunction->end(), MergeBB);
+  context.Builder->SetInsertPoint(MergeBB);
 
   return nullptr;
 }
