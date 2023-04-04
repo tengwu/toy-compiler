@@ -15,6 +15,8 @@ void CodeGenContext::generateCode(NBlock &root, std::string bcFile) {
       FunctionType::get(Type::getInt32Ty(MyContext), argTypes, false);
   mainFunction =
       Function::Create(ftype, GlobalValue::ExternalLinkage, "main", module);
+
+  std::cout << "name2: " << mainFunction->getName().str() << endl;
   BasicBlock *bblock = BasicBlock::Create(MyContext, "entry", mainFunction, 0);
   Builder->SetInsertPoint(bblock);
 
@@ -68,9 +70,8 @@ Value *NIdentifier::codeGen(CodeGenContext &context) {
     std::cerr << "undeclared variable " << name << endl;
     return NULL;
   }
-  return new LoadInst(llvm::Type::getInt64Ty(context.module->getContext()),
-                      context.locals()[name], "", false,
-                      context.currentBlock());
+  return context.Builder->CreateLoad(llvm::Type::getInt64Ty(MyContext),
+                                     context.locals()[name], "");
 }
 
 Value *NMethodCall::codeGen(CodeGenContext &context) {
@@ -81,7 +82,7 @@ Value *NMethodCall::codeGen(CodeGenContext &context) {
   for (it = arguments.begin(); it != arguments.end(); it++) {
     args.push_back((**it).codeGen(context));
   }
-  CallInst *call = CallInst::Create(function, args, "", context.currentBlock());
+  auto call = context.Builder->CreateCall(function, args, "");
   std::cout << "Creating method call: " << id.name << endl;
   return call;
 }
@@ -91,24 +92,32 @@ Value *NBinaryOperator::codeGen(CodeGenContext &context) {
   Instruction::BinaryOps instr;
   switch (op) {
     case TPLUS:
-      instr = Instruction::Add;
-      goto math;
+      //      instr = Instruction::Add;
+      //      goto math;
+      return context.Builder->CreateAdd(lhs.codeGen(context),
+                                        rhs.codeGen(context), "addtmp");
     case TMINUS:
-      instr = Instruction::Sub;
-      goto math;
+      //      instr = Instruction::Sub;
+      //      goto math;
+      return context.Builder->CreateSub(lhs.codeGen(context),
+                                        rhs.codeGen(context), "subtmp");
     case TMUL:
-      instr = Instruction::Mul;
-      goto math;
+      //      instr = Instruction::Mul;
+      //      goto math;
+      return context.Builder->CreateMul(lhs.codeGen(context),
+                                        rhs.codeGen(context), "multmp");
     case TDIV:
-      instr = Instruction::SDiv;
-      goto math;
+      //      instr = Instruction::SDiv;
+      //      goto math;
+      return context.Builder->CreateSDiv(lhs.codeGen(context),
+                                         rhs.codeGen(context), "idivtmp");
       /* TODO comparison */
   }
-  return NULL;
-math:
-  return BinaryOperator::Create(instr, lhs.codeGen(context),
-                                rhs.codeGen(context), "",
-                                context.currentBlock());
+  return nullptr;
+  //math:
+  //  return BinaryOperator::Create(instr, lhs.codeGen(context),
+  //                                rhs.codeGen(context), "",
+  //                                context.currentBlock());
 }
 
 Value *NAssignment::codeGen(CodeGenContext &context) {
@@ -117,8 +126,8 @@ Value *NAssignment::codeGen(CodeGenContext &context) {
     std::cerr << "undeclared variable " << lhs.name << endl;
     return NULL;
   }
-  return new StoreInst(rhs.codeGen(context), context.locals()[lhs.name], false,
-                       context.currentBlock());
+  return context.Builder->CreateStore(rhs.codeGen(context),
+                                      context.locals()[lhs.name]);
 }
 
 Value *NBlock::codeGen(CodeGenContext &context) {
@@ -149,8 +158,8 @@ Value *NReturnStatement::codeGen(CodeGenContext &context) {
 Value *NVariableDeclaration::codeGen(CodeGenContext &context) {
   std::cout << "Creating variable declaration " << type.name << " " << id.name
             << endl;
-  AllocaInst *alloc =
-      new AllocaInst(typeOf(type), 0, id.name.c_str(), context.currentBlock());
+  auto alloc =
+      context.Builder->CreateAlloca(typeOf(type), nullptr, id.name.c_str());
   context.locals()[id.name] = alloc;
   if (assignmentExpr != NULL) {
     NAssignment assn(id, *assignmentExpr);
@@ -180,7 +189,10 @@ Value *NFunctionDeclaration::codeGen(CodeGenContext &context) {
   FunctionType *ftype = FunctionType::get(typeOf(type), argTypes, false);
   Function *function = Function::Create(ftype, GlobalValue::InternalLinkage,
                                         id.name.c_str(), context.module);
+  std::cout << "name: " << id.name << endl;
   BasicBlock *bblock = BasicBlock::Create(MyContext, "entry", function, 0);
+  auto PreInsertBB = context.Builder->GetInsertBlock();
+  context.Builder->SetInsertPoint(bblock);
 
   context.pushBlock(bblock);
 
@@ -192,15 +204,18 @@ Value *NFunctionDeclaration::codeGen(CodeGenContext &context) {
 
     argumentValue = &*argsValues++;
     argumentValue->setName((*it)->id.name.c_str());
-    StoreInst *inst = new StoreInst(
-        argumentValue, context.locals()[(*it)->id.name], false, bblock);
+    StoreInst *inst = context.Builder->CreateStore(
+        argumentValue, context.locals()[(*it)->id.name]);
   }
 
   block.codeGen(context);
-  ReturnInst::Create(MyContext, context.getCurrentReturnValue(), bblock);
+
+  context.Builder->CreateRet(context.getCurrentReturnValue());
 
   context.popBlock();
   std::cout << "Creating function: " << id.name << endl;
+
+  context.Builder->SetInsertPoint(PreInsertBB);
 
   return function;
 }

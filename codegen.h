@@ -39,10 +39,10 @@ class CodeGenBlock {
 
 class CodeGenContext {
   std::stack<CodeGenBlock *> blocks;
-  std::unique_ptr<IRBuilder<>> Builder;
   Function *mainFunction;
 
   public:
+  std::unique_ptr<IRBuilder<>> Builder;
   Module *module;
   CodeGenContext() {
     module = new Module("main", MyContext);
