@@ -41,7 +41,7 @@
 %type <expr> numeric call_expr value_expr assign_expr operand_expr expr
 %type <varvec> func_decl_args
 %type <exprvec> call_args
-%type <block> program stmts block else_blocks
+%type <block> program stmts block else_block if_block if_blocks
 %type <stmt> stmt var_decl func_decl extern_decl
 %type <token> comparison calculation
 
@@ -75,12 +75,20 @@ stmt : func_decl
          | assign_expr { $$ = new NExpressionStatement(*$1); }
          | TRETURN call_expr { $$ = new NReturnStatement(*$2); }
          | TRETURN value_expr { $$ = new NReturnStatement(*$2); }
-         | TIF TLPAREN expr TRPAREN block else_blocks { $$ = new NBranchStatement(*$3, *$5, *$6); }
+         | if_blocks else_block { $$ = new NBranchStatement(((NIFBlocks *)$1)->getIFBlocks(), $2); }
          ;
 
 expr : value_expr { $$ = $1; }
 
-else_blocks: TELSE block { $$ = $2; }
+if_blocks: if_block { $$ = new NIFBlocks(); ((NIFBlocks *)$$)->IFBlocks.push_back($1); }
+         | if_blocks TELSE if_block { ((NIFBlocks *)$1)->IFBlocks.push_back($3); }
+         ;
+
+if_block : TIF TLPAREN expr TRPAREN block { $$ = new NIFBlock(*$3, *$5); }
+
+else_block: /*blank*/ { $$ = nullptr; }
+         | TELSE block { $$ = $2; }
+         ;
 
 block : TLBRACE stmts TRBRACE { $$ = $2; }
          | TLBRACE TRBRACE { $$ = new NBlock(); }

@@ -1,7 +1,20 @@
 cmake_minimum_required(VERSION 3.10)
 project(toy-compiler)
 
+set(CMAKE_C_COMPILER ${LLVM_DIR}/bin/clang)
+set(CMAKE_CXX_COMPILER ${LLVM_DIR}/bin/clang++)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
+# for cataline
+if(APPLE)
+    if(${CMAKE_SYSTEM_VERSION} VERSION_LESS "10.5")
+        message(FATAL_ERROR "Mac OS X 10.5 or later is required.")
+    endif()
+    set(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG "-Wl,-rpath,@loader_path/")
+endif()
+
+
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-register")
 
 file(GLOB CPPS ${CMAKE_SOURCE_DIR}/*.cpp)
 
@@ -279,7 +292,6 @@ target_link_libraries(compiler
         clangTidyAlteraModule
         MLIRAffineTransformOps
         MLIRArmSVEDialect
-        clangdXpcTransport
         MLIRPDLLAST
         MLIRComplexToStandard
         LLVMExecutionEngine
@@ -357,7 +369,6 @@ target_link_libraries(compiler
         MLIRMathToFuncs
         LLVMBPFDesc
         clangToolingInclusionsStdlib
-        clangdXpcJsonConversions
         MLIRDialectUtils
         MLIRVectorInterfaces
         clangAnalysisFlowSensitiveModels

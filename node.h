@@ -1,15 +1,18 @@
 #include <iostream>
 #include <llvm/IR/Value.h>
 #include <vector>
+#include <utility>
 
 class CodeGenContext;
 class NStatement;
 class NExpression;
 class NVariableDeclaration;
+class NBlock;
 
 typedef std::vector<NStatement *> StatementList;
 typedef std::vector<NExpression *> ExpressionList;
 typedef std::vector<NVariableDeclaration *> VariableList;
+using IFBlockList = std::vector<NBlock *>;
 
 class Node {
   public:
@@ -73,17 +76,37 @@ class NAssignment : public NExpression {
 class NBlock : public NExpression {
   public:
   StatementList statements;
+
   NBlock() {}
   virtual llvm::Value *codeGen(CodeGenContext &context);
 };
 
+class NIFBlock : public NBlock {
+  public:
+  NExpression &first;
+  NBlock &second;
+
+  NIFBlock(NExpression &condition, NBlock &block) : first(condition), second(block) {}
+  virtual llvm::Value *codeGen(CodeGenContext &context) { return nullptr; };
+};
+
+class NIFBlocks : public NBlock {
+  public:
+  IFBlockList IFBlocks;
+
+  NIFBlocks() {}
+  IFBlockList &getIFBlocks() { return IFBlocks; };
+};
+
 class NBranchStatement : public NStatement {
   public:
-      NExpression &ConditionExpr;
-      NBlock &ThenBlock;
-      NBlock &ElseBlock;
-      NBranchStatement(NExpression &conditionExpr, NBlock &thenBlock,
-                  NBlock &elseBlock);
+      IFBlockList &IFBlocks;
+      NBlock *ElseBlock;
+
+      NBranchStatement(IFBlockList &ifBlocks, NBlock *elseBlock): IFBlocks(ifBlocks), ElseBlock(elseBlock) {};
+
+      void setIFBlocks(IFBlockList &ifBlocks);
+      void setElseBlock(NBlock *elseBlock);
       llvm::Value *codeGen(CodeGenContext &context) override;
 };
 

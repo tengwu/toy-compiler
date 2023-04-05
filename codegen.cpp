@@ -221,46 +221,89 @@ Value *NFunctionDeclaration::codeGen(CodeGenContext &context) {
   return function;
 }
 
-NBranchStatement::NBranchStatement(NExpression &conditionExpr,
-                                   NBlock &thenBlock, NBlock &elseBlock)
-    : ConditionExpr(conditionExpr), ThenBlock(thenBlock), ElseBlock(elseBlock) {
+void NBranchStatement::setIFBlocks(IFBlockList &ifBlocks) {
+  IFBlocks = ifBlocks;
 }
+
+void NBranchStatement::setElseBlock(NBlock *block) {
+  ElseBlock = block;
+}
+
 Value *NBranchStatement::codeGen(CodeGenContext &context) {
-  auto &TheContext = context.module->getContext();
-  Value *CondV = ConditionExpr.codeGen(context);
-  if (!CondV) return nullptr;
+  std::cout << "Creating branch" << endl;
+  IFBlockList::const_iterator it;
+  Value *CondV;
+  BasicBlock *PreInsertBB = context.Builder->GetInsertBlock();
+  Function *TheFunction = PreInsertBB->getParent();
 
-  CondV = context.Builder->CreateICmpNE(
-      CondV, ConstantInt::get(Type::getInt64Ty(MyContext), 0), "ifcond");
+  // Create block labels
+  std::vector<BasicBlock *> IfBBs;
+  std::vector<BasicBlock *> ThenBBs;
+  auto Parent = TheFunction;
+  for (auto &IFBlock : IFBlocks) {
+    IfBBs.push_back(BasicBlock::Create(MyContext, "if"));
+    ThenBBs.push_back(BasicBlock::Create(MyContext, "then"));
+  }
 
-  Function *TheFunction = context.Builder->GetInsertBlock()->getParent();
-
-  // Emit then block
-  BasicBlock *ThenBB = BasicBlock::Create(MyContext, "then", TheFunction);
   BasicBlock *ElseBB = BasicBlock::Create(MyContext, "else");
-  BasicBlock *MergeBB = BasicBlock::Create(MyContext, "ifcont");
+  BasicBlock *MergeBB = BasicBlock::Create(MyContext, "merge");
 
-  context.Builder->CreateCondBr(CondV, ThenBB, ElseBB);
+  for (int i = 0; i < IFBlocks.size(); i++) {
+    NIFBlock *IFBlock = dynamic_cast<NIFBlock *>(IFBlocks[i]);
+    NExpression &ConditionExpr = IFBlock->first;
+    NBlock &ThenBlock = IFBlock->second;
+    BasicBlock *IfBB = IfBBs[i];
+    BasicBlock *ThenBB = ThenBBs[i];
+    BasicBlock *ElseIfBB = nullptr;
 
-  context.Builder->SetInsertPoint(ThenBB);
-  Value *ThenV = ThenBlock.codeGen(context);
-  if (!ThenV) return nullptr;
 
-  // Goto MergeBB when finish ThenBB
-  context.Builder->CreateBr(MergeBB);
+    if (i + 1 < IFBlocks.size())
+      ElseIfBB = IfBBs[i + 1]; // Goto next if some else-if blocks exist
+    else if (ElseBlock)
+      ElseIfBB = ElseBB; // Goto else block when no else-if blocks exist
+    else
+      ElseIfBB = MergeBB; // Goto merge block when no else block exists
 
-  // Emit else block
-  TheFunction->insert(TheFunction->end(), ElseBB);
-  context.Builder->SetInsertPoint(ElseBB);
+    if (i) {
+      TheFunction->insert(TheFunction->end(), IfBB);
+      context.Builder->SetInsertPoint(IfBB);
+    }
 
-  Value *ElseV = ElseBlock.codeGen(context);
-  if (!ElseV) return nullptr;
+    CondV = ConditionExpr.codeGen(context);
+    if (!CondV) return nullptr;
 
-  context.Builder->CreateBr(MergeBB);
+
+    CondV = context.Builder->CreateICmpEQ(
+        CondV, ConstantInt::get(Type::getInt64Ty(MyContext), 0), "ifcond");
+
+    context.Builder->CreateCondBr(CondV, ElseIfBB, ThenBB);
+
+    TheFunction->insert(TheFunction->end(), ThenBB);
+    context.Builder->SetInsertPoint(ThenBB);
+
+    Value *ThenV = ThenBlock.codeGen(context);
+    if (!ThenV) return nullptr;
+
+    // Goto MergeBB when finish ThenBB
+    context.Builder->CreateBr(MergeBB);
+  }
+
+  if (ElseBlock) {
+    TheFunction->insert(TheFunction->end(), ElseBB);
+    context.Builder->SetInsertPoint(ElseBB);
+
+    Value *ElseV = ElseBlock->codeGen(context);
+    if (!ElseV) return nullptr;
+
+    // Goto MergeBB when finish ElseBB
+    context.Builder->CreateBr(MergeBB);
+  }
 
   // Emit merge block
   TheFunction->insert(TheFunction->end(), MergeBB);
   context.Builder->SetInsertPoint(MergeBB);
+
+  std::cout << "Created branch" << endl;
 
   return nullptr;
 }
