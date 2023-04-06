@@ -10,6 +10,9 @@
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+#include <stdio.h>
+#include <memory>
+#include <string>
 
 using namespace std;
 using namespace llvm;
@@ -18,8 +21,6 @@ using namespace llvm::sys;
 extern FILE *yyin;
 extern int yyparse();
 extern NBlock *programBlock;
-
-void createCoreFunctions(CodeGenContext &context);
 
 int main(int argc, char **argv) {
   const char *fname = "test/example.txt";
@@ -31,13 +32,13 @@ int main(int argc, char **argv) {
 
   FILE *fp = fopen(fname, "r");
   if (!fp) {
-    printf("couldn't open file for reading\n");
+    errs() << "Failed when open file " << fname << '\n';
     exit(-1);
   }
   yyin = fp;
   int parseErr = yyparse();
   if (parseErr != 0) {
-    printf("couldn't complete lex parse\n");
+    errs() << "Failed when parse\n";
     exit(-1);
   }
   fclose(fp);
@@ -57,7 +58,7 @@ int main(int argc, char **argv) {
 
   // Create a new pass manager attached to it.
   std::shared_ptr<legacy::FunctionPassManager> FPM =
-      std::make_unique<legacy::FunctionPassManager>(TheModule);
+    std::make_shared<legacy::FunctionPassManager>(TheModule);
 
   // Do simple "peephole" optimizations and bit-twiddling optzns.
   FPM->add(createInstructionCombiningPass());

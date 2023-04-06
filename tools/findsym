@@ -1,0 +1,12 @@
+libs=()
+while IFS= read -r line; do
+    libs+=("$line")
+done < /tmp/libs
+# echo ${#libs[@]}
+# exit -1
+for i in "${libs[@]}"
+do
+	echo $i
+	nm $i | grep $1
+	echo ""
+done

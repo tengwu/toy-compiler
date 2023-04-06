@@ -20,6 +20,7 @@
 
 using namespace llvm;
 
+
 class NBlock;
 
 static LLVMContext MyContext;
@@ -68,3 +69,5 @@ class CodeGenContext {
   }
   Value *getCurrentReturnValue() { return blocks.top()->returnValue; }
 };
+
+void createCoreFunctions(CodeGenContext &context);

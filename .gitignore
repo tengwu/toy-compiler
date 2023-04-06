@@ -8,3 +8,12 @@ test/example.S
 test/example.native
 .vscode
 .history
+.cache/
+.dir-locals.el
+.idea/
+build/
+build_catalina/
+cmake-build-debug-in-catalina/
+cmake-build-debug/
+compile_commands.json
+mybuild/

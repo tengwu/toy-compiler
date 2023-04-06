@@ -93,32 +93,20 @@ Value *NBinaryOperator::codeGen(CodeGenContext &context) {
   Instruction::BinaryOps instr;
   switch (op) {
     case TPLUS:
-      //      instr = Instruction::Add;
-      //      goto math;
       return context.Builder->CreateAdd(lhs.codeGen(context),
                                         rhs.codeGen(context), "addtmp");
     case TMINUS:
-      //      instr = Instruction::Sub;
-      //      goto math;
       return context.Builder->CreateSub(lhs.codeGen(context),
                                         rhs.codeGen(context), "subtmp");
     case TMUL:
-      //      instr = Instruction::Mul;
-      //      goto math;
       return context.Builder->CreateMul(lhs.codeGen(context),
                                         rhs.codeGen(context), "multmp");
     case TDIV:
-      //      instr = Instruction::SDiv;
-      //      goto math;
       return context.Builder->CreateSDiv(lhs.codeGen(context),
                                          rhs.codeGen(context), "idivtmp");
       /* TODO comparison */
   }
   return nullptr;
-  //math:
-  //  return BinaryOperator::Create(instr, lhs.codeGen(context),
-  //                                rhs.codeGen(context), "",
-  //                                context.currentBlock());
 }
 
 Value *NAssignment::codeGen(CodeGenContext &context) {
