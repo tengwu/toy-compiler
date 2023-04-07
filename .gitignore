@@ -9,7 +9,6 @@ test/example.native
 .vscode
 .history
 .cache/
-.dir-locals.el
 .idea/
 build/
 build_catalina/
