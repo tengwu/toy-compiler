@@ -238,8 +238,8 @@ Value *NBranchStatement::codeGen(CodeGenContext &context) {
 
   for (int i = 0; i < IFBlocks.size(); i++) {
     NIFBlock *IFBlock = dynamic_cast<NIFBlock *>(IFBlocks[i]);
-    NExpression &ConditionExpr = IFBlock->first;
-    NBlock &ThenBlock = IFBlock->second;
+    NExpression &ConditionExpr = IFBlock->condExpr;
+    NBlock &ThenBlock = *IFBlocks[i];
     BasicBlock *IfBB = IfBBs[i];
     BasicBlock *ThenBB = ThenBBs[i];
     BasicBlock *ElseIfBB = nullptr;

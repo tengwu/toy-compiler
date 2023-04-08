@@ -83,11 +83,11 @@ class NBlock : public NExpression {
 
 class NIFBlock : public NBlock {
   public:
-  NExpression &first;
-  NBlock &second;
+  NExpression &condExpr;
 
-  NIFBlock(NExpression &condition, NBlock &block) : first(condition), second(block) {}
-  virtual llvm::Value *codeGen(CodeGenContext &context) { return nullptr; };
+  NIFBlock(NExpression &condition, NBlock &block) : condExpr(condition) {
+    statements = block.statements;
+  }
 };
 
 class NIFBlocks : public NBlock {
