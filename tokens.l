@@ -16,6 +16,7 @@
 "return"                                        KEYWORD_TOKEN(TRETURN); return TRETURN;
 "if"                                            KEYWORD_TOKEN(TIF); return TIF;
 "else"                                          KEYWORD_TOKEN(TELSE); return TELSE;
+"while"                                         KEYWORD_TOKEN(TWHILE); return TWHILE;
 
 [a-zA-Z_][a-zA-Z0-9_]*                          STRING_TOKEN; return TIDENTIFIER;
 [0-9]+\.[0-9]*                                  STRING_TOKEN; return TDOUBLE;

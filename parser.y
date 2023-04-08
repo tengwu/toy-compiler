@@ -30,7 +30,7 @@
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT
 %token <token> TPLUS TMINUS TMUL TDIV
-%token <token> TRETURN TEXTERN TIF TELSE
+%token <token> TRETURN TEXTERN TIF TELSE TWHILE
 
 /* Define the type of node our nonterminal symbols represent.
    The types refer to the %union declaration above. Ex: when
@@ -76,6 +76,7 @@ stmt : func_decl
          | TRETURN call_expr { $$ = new NReturnStatement(*$2); }
          | TRETURN value_expr { $$ = new NReturnStatement(*$2); }
          | if_blocks else_block { $$ = new NBranchStatement(((NIFBlocks *)$1)->getIFBlocks(), $2); }
+         | TWHILE TLPAREN expr TRPAREN block { $$ = new NWhileStatement(*$3, *$5); }
          ;
 
 expr : value_expr { $$ = $1; }

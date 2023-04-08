@@ -83,9 +83,9 @@ class NBlock : public NExpression {
 
 class NIFBlock : public NBlock {
   public:
-  NExpression &condExpr;
+  NExpression &CondExpr;
 
-  NIFBlock(NExpression &condition, NBlock &block) : condExpr(condition) {
+  NIFBlock(NExpression &condition, NBlock &block) : CondExpr(condition) {
     statements = block.statements;
   }
 };
@@ -103,11 +103,23 @@ class NBranchStatement : public NStatement {
       IFBlockList &IFBlocks;
       NBlock *ElseBlock;
 
-      NBranchStatement(IFBlockList &ifBlocks, NBlock *elseBlock): IFBlocks(ifBlocks), ElseBlock(elseBlock) {};
+      NBranchStatement(IFBlockList &ifBlocks, NBlock *elseBlock)
+          : IFBlocks(ifBlocks), ElseBlock(elseBlock){};
 
       void setIFBlocks(IFBlockList &ifBlocks);
       void setElseBlock(NBlock *elseBlock);
       llvm::Value *codeGen(CodeGenContext &context) override;
+};
+
+
+class NWhileStatement : public NStatement {
+public:
+  NExpression &CondExpr;
+  NBlock &ThenBlock;
+
+  NWhileStatement(NExpression &condtion, NBlock &block)
+      : CondExpr(condtion), ThenBlock(block) {}
+  virtual llvm::Value *codeGen(CodeGenContext &context);
 };
 
 class NExpressionStatement : public NStatement {

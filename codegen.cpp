@@ -1,6 +1,9 @@
 #include "codegen.h"
 #include "node.h"
 #include "parser.hpp"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Value.h"
+#include <iostream>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IRPrinter/IRPrintingPasses.h>
 
@@ -238,7 +241,7 @@ Value *NBranchStatement::codeGen(CodeGenContext &context) {
 
   for (int i = 0; i < IFBlocks.size(); i++) {
     NIFBlock *IFBlock = dynamic_cast<NIFBlock *>(IFBlocks[i]);
-    NExpression &ConditionExpr = IFBlock->condExpr;
+    NExpression &ConditionExpr = IFBlock->CondExpr;
     NBlock &ThenBlock = *IFBlocks[i];
     BasicBlock *IfBB = IfBBs[i];
     BasicBlock *ThenBB = ThenBBs[i];
@@ -292,6 +295,46 @@ Value *NBranchStatement::codeGen(CodeGenContext &context) {
   context.Builder->SetInsertPoint(MergeBB);
 
   std::cout << "Created branch" << endl;
+
+  return nullptr;
+}
+
+
+llvm::Value *NWhileStatement::codeGen(CodeGenContext &context) {
+  std::cout << "Creating while" << endl;
+
+  Function *TheFunction = context.Builder->GetInsertBlock()->getParent();
+  BasicBlock *CondBB = BasicBlock::Create(MyContext, "whilecond");
+  BasicBlock *ThenBB = BasicBlock::Create(MyContext, "then");
+  BasicBlock *MergeBB = BasicBlock::Create(MyContext, "merge");
+
+  context.Builder->CreateBr(CondBB);
+  TheFunction->insert(TheFunction->end(), CondBB);
+  context.Builder->SetInsertPoint(CondBB);
+
+  auto CondV = CondExpr.codeGen(context);
+  if (!CondV) return nullptr;
+
+  CondV = context.Builder->CreateICmpEQ(
+      CondV, ConstantInt::get(Type::getInt64Ty(MyContext), 0), "whilecond");
+
+  context.Builder->CreateCondBr(CondV, MergeBB, ThenBB);
+
+  TheFunction->insert(TheFunction->end(), ThenBB);
+  context.Builder->SetInsertPoint(ThenBB);
+
+  Value *ThenV = ThenBlock.codeGen(context);
+  if (!ThenV) return nullptr;
+
+  // Back to CondBB
+  context.Builder->CreateBr(CondBB);
+
+  TheFunction->insert(TheFunction->end(), MergeBB);
+
+  // Insert extra instructions to where from MergeBB
+  context.Builder->SetInsertPoint(MergeBB);
+  
+  std::cout << "Created while" << endl;
 
   return nullptr;
 }
